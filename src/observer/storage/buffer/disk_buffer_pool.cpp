@@ -11,6 +11,7 @@ See the Mulan PSL v2 for more details. */
 //
 // Created by Meiyi & Longda on 2021/4/13.
 //
+#include <cstdio>
 #include <errno.h>
 #include <string.h>
 
@@ -309,6 +310,10 @@ RC DiskBufferPool::close_file()
 
   bp_manager_.close_file(file_name_.c_str());
   return RC::SUCCESS;
+}
+
+void DiskBufferPool::remove_file() {
+  bp_manager_.remove_file(file_name_.c_str());
 }
 
 RC DiskBufferPool::get_this_page(PageNum page_num, Frame **frame)
@@ -887,6 +892,12 @@ RC BufferPoolManager::close_file(const char *_file_name)
   lock_.unlock();
 
   delete bp;
+  return RC::SUCCESS;
+}
+
+RC BufferPoolManager::remove_file(const char *file_name) {
+  close_file(file_name);
+  ::remove(file_name);
   return RC::SUCCESS;
 }
 
