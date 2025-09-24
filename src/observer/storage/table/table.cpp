@@ -35,6 +35,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/record/lsm_record_scanner.h"
 #include "storage/table/heap_table_engine.h"
 #include "storage/table/lsm_table_engine.h"
+#include "storage/default/default_handler.h"
 
 Table::~Table()
 {
@@ -100,6 +101,15 @@ RC Table::create(Db *db, int32_t table_id, const char *path, const char *name, c
   db_       = db;
 
   string             data_file = table_data_file(base_dir, name);
+
+  // string             test_file = table_data_file(db_->path().c_str(), table_meta_.name());
+  // if (test_file == data_file) {
+  //   LOG_ERROR("Data file path is same as meta file path. data_file=%s, meta_file=%s", data_file.c_str(), path);
+  //   return RC::INTERNAL;
+  // } else {  LOG_ERROR("Table::create - base_dir: %s", data_file.c_str());
+  //   LOG_ERROR("Table::drop - db_->path(): %s", test_file.c_str());
+  // }
+  
   BufferPoolManager &bpm       = db->buffer_pool_manager();
   rc                           = bpm.create_file(data_file.c_str());
   if (rc != RC::SUCCESS) {
@@ -132,9 +142,13 @@ RC Table::drop(const char *path) {
     return RC::INTERNAL;
   }
 
-  string             data_file = table_data_file(base_dir_.c_str(), table_meta_.name());
+  engine_.reset();  // 确保 HeapTableEngine 析构完成
+
+  string             data_file = table_data_file(db_->path().c_str(), table_meta_.name());
   BufferPoolManager &bpm       = db_->buffer_pool_manager();
+  
   bpm.remove_file(data_file.c_str());
+  data_buffer_pool_ = nullptr;
 
   if (record_handler_ != nullptr) {
     delete record_handler_;
